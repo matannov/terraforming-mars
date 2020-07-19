@@ -7,6 +7,8 @@ import { ResourceType } from '../../ResourceType';
 import { SelectCard } from '../../inputs/SelectCard';
 import { ICard } from '../ICard';
 import { CardName } from '../../CardName';
+import { LogHelper } from "../../components/LogHelper";
+import { Game } from "../../Game";
 
 export class CorroderSuits implements IProjectCard {
     public cost: number = 8;
@@ -14,14 +16,24 @@ export class CorroderSuits implements IProjectCard {
     public name: CardName = CardName.CORRODER_SUITS;
     public cardType: CardType = CardType.AUTOMATED;
 
-    public play(player: Player) {
+    public play(player: Player, game: Game) {
         player.setProduction(Resources.MEGACREDITS,2);
-        if (this.getResCards(player).length === 0) return undefined;
+        const cards = this.getResCards(player);
+
+        if (cards.length === 0) return undefined;
+
+        if (cards.length === 1) {
+            player.addResourceTo(cards[0], 1);
+            LogHelper.logAddResource(game, player, cards[0]);
+            return undefined;
+        }
+
         return new SelectCard(
             'Select card to add 1 resource',
             this.getResCards(player),
             (foundCards: Array<ICard>) => {
               player.addResourceTo(foundCards[0], 1);
+              LogHelper.logAddResource(game, player, foundCards[0]);
               return undefined;
             }
         );

@@ -12,13 +12,23 @@ describe("LunaMetropolis", function () {
         const player = new Player("test", Color.BLUE, false);
         const gameOptions = {
             draftVariant: false,
+            initialDraftVariant: false,
+            corporateEra: true,
+            randomMA: false,
             preludeExtension: false,
             venusNextExtension: true,
             coloniesExtension: false,
+            turmoilExtension: false,
             boardName: BoardName.ORIGINAL,
             showOtherPlayersVP: false,
             customCorporationsList: [],
-            solarPhaseOption: false
+            solarPhaseOption: false,
+            promoCardsOption: false,
+            undoOption: false,
+            startingCorporations: 2,
+            includeVenusMA: true,
+            soloTR: false,
+            clonedGamedId: undefined
           } as GameOptions;
         const game = new Game("foobar", [player,player], player, gameOptions);
 

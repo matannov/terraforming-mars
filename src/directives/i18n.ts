@@ -1,15 +1,33 @@
 
-import { PreferencesManager } from "../components/PreferencesManger";
+import { PreferencesManager } from "../components/PreferencesManager";
 
 export function translateText(englishText: string): string {
     let translatedText = englishText;
     if ((window as any).TM_translations === undefined) return translatedText; 
     const lang = PreferencesManager.loadValue("lang") || "en";
     if (lang === "en") return englishText;
+
+    englishText = normalizeText(englishText);
+
     if ((window as any).TM_translations[lang][englishText]) {
         translatedText = (window as any).TM_translations[lang][englishText]
+    } else {
+        let stripedText = englishText.replace(/^\(|\)$/gm, "");
+        if (stripedText && stripedText !== englishText) {
+            stripedText = translateText(stripedText);
+            if (stripedText !== englishText) {
+                translatedText = "(" + stripedText + ")";
+            }
+        } else if (stripedText && stripedText.length > 3) {
+            console.log("Please translate \"" + stripedText + "\"")
+        }
     }
     return translatedText;
+}
+
+function normalizeText(text: string): string {
+    text = text.replace(/[\n\r]/g, "").replace(/[ ]+/g, " ");
+    return text.trim()
 }
 
 function translateChildren(node: any) {
@@ -18,7 +36,7 @@ function translateChildren(node: any) {
         if (child.nodeType === Node.TEXT_NODE) {
             var translatedText = translateText(child.data);
             if (translatedText !== child.data) {
-                child.data = translateText(child.data);
+                child.data = translatedText;
             }
         } else {
             translateChildren(child);

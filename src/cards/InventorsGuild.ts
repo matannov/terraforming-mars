@@ -1,4 +1,3 @@
-
 import { Tags } from "./Tags";
 import { CardType } from "./CardType";
 import { Player } from "../Player";
@@ -8,6 +7,7 @@ import {SelectCard} from '../inputs/SelectCard';
 import { IProjectCard } from "./IProjectCard";
 import { IActionCard } from "./ICard";
 import { CardName } from '../CardName';
+import { LogHelper } from "../components/LogHelper";
 
 export class InventorsGuild implements IActionCard, IProjectCard {
     public cost: number = 9;
@@ -25,10 +25,11 @@ export class InventorsGuild implements IActionCard, IProjectCard {
         const dealtCard = game.dealer.dealCard();
         const canSelectCard = player.canAfford(player.cardCost);
         return new SelectCard(
-          canSelectCard ? "Select card to keep or none to discard" : "You cannot pay this card" ,
+          canSelectCard ? "Select card to keep or none to discard" : "You cannot pay for this card" ,
           [dealtCard],
           (cards: Array<IProjectCard>) => {
-            if (cards.length === 0) {
+            if (cards.length === 0 || !canSelectCard) {
+              LogHelper.logCardChange(game, player, "discarded", 1);
               game.dealer.discard(dealtCard);
               return undefined;
             }
@@ -43,11 +44,13 @@ export class InventorsGuild implements IActionCard, IProjectCard {
                   }
                   player.megaCredits -= htp.megaCredits;
                   player.heat -= htp.heat;
+                  LogHelper.logCardChange(game, player, "drew", 1);
                   player.cardsInHand.push(dealtCard);
                   return undefined;
                 }
               );
             }
+            LogHelper.logCardChange(game, player, "drew", 1);
             player.cardsInHand.push(dealtCard);
             player.megaCredits -= player.cardCost;
             return undefined;

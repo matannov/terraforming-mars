@@ -1,4 +1,3 @@
-import {Player} from "./Player";
 import {IProjectCard} from "./cards/IProjectCard";
 import {Phase} from "./Phase";
 import {ClaimedMilestone} from "./ClaimedMilestone";
@@ -13,11 +12,13 @@ import { CardName } from "./CardName";
 import { BoardName } from "./BoardName";
 import { SerializedPlayer } from "./SerializedPlayer";
 import { SerializedDealer } from "./SerializedDealer";
+import { SerializedTurmoil } from "./turmoil/SerializedTurmoil";
+import { PlayerId } from "./Player";
 
 export interface SerializedGame {
     id: string;
     players: Array<SerializedPlayer>;
-    first: Player;
+    first: SerializedPlayer;
     preludeExtension: boolean;
     draftVariant: boolean;
     showOtherPlayersVP: boolean;
@@ -27,7 +28,7 @@ export interface SerializedGame {
     corporationList: Array<CardName>;
     boardName: BoardName;
     seed?: number
-    activePlayer: Player;
+    activePlayer: PlayerId;
     claimedMilestones: Array<ClaimedMilestone>;
     milestones: Array<IMilestone>;
     dealer: SerializedDealer;
@@ -36,22 +37,24 @@ export interface SerializedGame {
     generation: number;
     draftRound: number;
     phase: Phase;
-    donePlayers: Set<Player>;
+    donePlayers: Set<PlayerId>;
     oxygenLevel: number;
     venusScaleLevel: number;
-    passedPlayers: Set<Player>;
-    researchedPlayers: Set<Player>;
-    draftedPlayers: Set<Player>;
+    passedPlayers: Set<PlayerId>;
+    researchedPlayers: Set<PlayerId>;
+    draftedPlayers: Set<PlayerId>;
     board: Board;
     temperature: number;
     gameLog: Array<String>;
     gameAge: number;
-    unDraftedCards: Map<Player, Array<IProjectCard>>;
+    unDraftedCards: Map<SerializedPlayer, Array<IProjectCard>>;
     interrupts: Array<PlayerInterrupt>;
-    monsInsuranceOwner: Player | undefined;
+    monsInsuranceOwner: PlayerId | undefined;
     colonies: Array<IColony>;
     colonyDealer: ColonyDealer | undefined;
     pendingOceans: number;
     lastSaveId: number;
+    turmoil: SerializedTurmoil;
+    someoneHasRemovedOtherPlayersPlants: boolean;
 }
 

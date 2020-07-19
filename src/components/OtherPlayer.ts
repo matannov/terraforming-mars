@@ -55,19 +55,25 @@ export const OtherPlayer = Vue.component("other-player", {
                     <span class="player_name" :class="'player_bg_color_' + player.color"> {{ player.name }} played cards </span>
                     <div>
                         <div v-if="player.corporationCard !== undefined" class="cardbox">
-                            <card :card="player.corporationCard" :resources="player.corporationCardResources"></card>
+                            <card :card="player.corporationCard" :player="player"></card>
                         </div>
                         <div v-for="card in getCardsByType(player.playedCards, [getActiveCardType()])" :key="card.name" class="cardbox">
-                            <card :card="card.name" :resources="card.resources" :player="player"></card>
+                            <card :card="card" :player="player"></card>
                         </div>
 
-                        <stacked-cards :cards="getCardsByType(player.playedCards, [getAutomatedCardType(), getPreludeCardType()])" ></stacked-cards>
-                        <stacked-cards :cards="getCardsByType(player.playedCards, [getEventCardType()])" ></stacked-cards>                    
-
-
+                        <stacked-cards :cards="getCardsByType(player.playedCards, [getAutomatedCardType(), getPreludeCardType()])" :player="player"></stacked-cards>
+                        <stacked-cards :cards="getCardsByType(player.playedCards, [getEventCardType()])" :player="player"></stacked-cards>
                     </div>
-                </div> 
+                </div>
 
+                <div v-if="player.selfReplicatingRobotsCards.length > 0" class="player_home_block">
+                    <span> Self-Replicating Robots cards </span>
+                    <div>
+                        <div v-for="card in getCardsByType(player.selfReplicatingRobotsCards, [getActiveCardType()])" :key="card.name" class="cardbox">
+                            <card :card="card" :player="player"></card>
+                        </div>
+                    </div>
+                </div>                
 
             </div>
         </div>

@@ -3,12 +3,15 @@ import { ColonyModel } from "./ColonyModel";
 import { Color } from "../Color";
 import { VictoryPointsBreakdown } from "../VictoryPointsBreakdown";
 import { ITagCount } from '../ITagCount';
+import { TurmoilModel } from "./TurmoilModel";
+import { IProjectCard } from '../cards/IProjectCard';
+import { CorporationCard } from '../cards/corporation/CorporationCard';
 
 export interface PlayerModel {
     boardName: string;
-    corporationCard: string;
-    corporationCardResources: number;
+    corporationCard: CardModel;
     playedCards: Array<CardModel>;
+    cardCost: number;
     cardsInHandNbr: number;
     colonies: Array<ColonyModel>;
     color: Color;
@@ -32,6 +35,7 @@ export interface PlayerModel {
     titanium: number;
     titaniumProduction: number;
     titaniumValue: number;
+    turmoil: TurmoilModel | undefined;
     venusNextExtension: boolean;
     venusScaleLevel: number;
     victoryPointsBreakdown: VictoryPointsBreakdown;
@@ -40,4 +44,10 @@ export interface PlayerModel {
     actionsThisGeneration: Array<string>;
     fleetSize: number;
     tradesThisTurn: number;
+    selfReplicatingRobotsCards: Array<CardModel>;
+    dealtCorporationCards: Array<CorporationCard>;
+    dealtPreludeCards:  Array<IProjectCard>;
+    initialDraft: boolean;
+    needsToDraft: boolean | undefined;
+    deckSize: number;
 }

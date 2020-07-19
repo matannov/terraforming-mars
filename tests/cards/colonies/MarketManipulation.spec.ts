@@ -2,34 +2,47 @@ import { expect } from "chai";
 import { MarketManipulation } from "../../../src/cards/colonies/MarketManipulation";
 import { Color } from "../../../src/Color";
 import { Player } from "../../../src/Player";
-import { Game } from '../../../src/Game';
-import { Luna } from '../../../src/colonies/Luna';
-import { Triton } from '../../../src/colonies/Triton';
-import { AndOptions } from "../../../src/inputs/AndOptions";
+import { Game } from "../../../src/Game";
+import { Luna } from "../../../src/colonies/Luna";
+import { Triton } from "../../../src/colonies/Triton";
 import { OrOptions } from "../../../src/inputs/OrOptions";
+import { Miranda } from "../../../src/colonies/Miranda";
+import { Enceladus } from "../../../src/colonies/Enceladus";
+import { Pets } from "../../../src/cards/Pets";
 
 describe("MarketManipulation", function () {
+    let card : MarketManipulation, player : Player, player2: Player, game : Game, luna: Luna;
+
+    beforeEach(function() {
+        card = new MarketManipulation();
+        player = new Player("test", Color.BLUE, false);
+        player2 = new Player("test2", Color.RED, false);
+        game = new Game("foobar", [player, player2], player);
+        luna = new Luna();
+    });
+
     it("Should play", function () {
-        const card = new MarketManipulation();
-        const player = new Player("test", Color.BLUE, false);
-        const player2 = new Player("test2", Color.RED, false);
-        const game = new Game("foobar", [player,player2], player);
-        let colony1 = new Luna();
-        let colony2 = new Triton();
+        let triton = new Triton();
+        game.colonies.push(luna, triton);
 
-        game.colonies.push(colony1);
-        game.colonies.push(colony2);
-
-        const action = card.play(player, game) as AndOptions;
+        const action = card.play(player, game) as OrOptions;
         expect(action).not.to.eq(undefined);
+        expect(action.options[0].title).to.eq("Increase Luna (MegaCredits) and decrease Triton (Titanium)")
+        action.options[0].cb();
 
-        const orOptions1 = action.options[0] as OrOptions;
-        const orOptions2 = action.options[1] as OrOptions;
+        expect(luna.trackPosition).to.eq(2);
+        expect(triton.trackPosition).to.eq(0);
+    });
 
-        orOptions1.options[0].cb();
-        orOptions2.options[1].cb();
+    it("Can't play", function () {
+        let enceladus = new Enceladus();
+        let miranda = new Miranda();
+        
+        game.colonies.push(enceladus, miranda, luna);
+        game.coloniesExtension = true;
+        expect(card.canPlay(player, game)).to.eq(false);
 
-        expect(colony1.trackPosition).to.eq(2);
-        expect(colony2.trackPosition).to.eq(0);
+        player.playCard(game, new Pets());
+        expect(card.canPlay(player, game)).to.eq(true);
     });
 });

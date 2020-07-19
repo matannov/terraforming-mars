@@ -5,8 +5,8 @@ import { Player } from "../../Player";
 import { CardName } from '../../CardName';
 import { Resources } from "../../Resources";
 import { Game } from '../../Game';
-import { TileType } from '../../TileType';
 import { ResourceType } from '../../ResourceType';
+import { LogHelper } from "../../components/LogHelper";
 
 export class UrbanDecomposers implements IProjectCard {
     public cost: number = 6;
@@ -15,17 +15,25 @@ export class UrbanDecomposers implements IProjectCard {
     public cardType: CardType = CardType.AUTOMATED;
 
     public canPlay(player: Player, game: Game): boolean {
-        if (game.board.getAvailableSpacesForCity(player).length === 0) return false;
         let coloniesCount: number = 0;
         game.colonies.forEach(colony => { 
-          coloniesCount += colony.colonies.filter(owner => owner === player).length;
+          coloniesCount += colony.colonies.filter(owner => owner === player.id).length;
         });
-        return coloniesCount > 0 && game.getSpaceCount(TileType.CITY, player) > 0;
+        return coloniesCount > 0 && player.getCitiesCount(game) > 0;
     }
 
     public play(player: Player, game: Game) {
-        player.setProduction(Resources.PLANTS, 1);  
-        game.addResourceInterrupt(player, ResourceType.MICROBE, 2, undefined);
+        player.setProduction(Resources.PLANTS, 1);
+
+        const microbeCards = player.getResourceCards(ResourceType.MICROBE);
+
+        if (microbeCards.length === 1) {
+            player.addResourceTo(microbeCards[0], 2);
+            LogHelper.logAddResource(game, player, microbeCards[0], 2);
+        } else if (microbeCards.length > 1) {
+            game.addResourceInterrupt(player, ResourceType.MICROBE, 2, undefined);
+        }
+
         return undefined;
     }
 }

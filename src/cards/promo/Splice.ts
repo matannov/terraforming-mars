@@ -7,6 +7,10 @@ import { SelectOption } from "../../inputs/SelectOption";
 import { OrOptions } from "../../inputs/OrOptions";
 import { ResourceType } from "../../ResourceType";
 import { CardName } from '../../CardName';
+import { LogMessageType } from "../../LogMessageType";
+import { LogMessageData } from "../../LogMessageData";
+import { LogMessageDataType } from "../../LogMessageDataType";
+import { ICard } from "../ICard";
 
 export class Splice implements CorporationCard {
     public name: CardName = CardName.SPLICE;
@@ -15,6 +19,16 @@ export class Splice implements CorporationCard {
 
     public initialAction(player: Player, game: Game) {
         player.cardsInHand.push(game.drawCardsByTag(Tags.MICROBES, 1)[0]);
+        
+        const drawnCards = game.getCardsInHandByTag(player, Tags.MICROBES).slice(-1);
+
+        game.log(
+            LogMessageType.DEFAULT,
+            "${0} drew ${1}",
+            new LogMessageData(LogMessageDataType.PLAYER, player.id),
+            new LogMessageData(LogMessageDataType.CARD, drawnCards[0].name)
+        );
+        
         return undefined;
     }
 
@@ -41,6 +55,10 @@ export class Splice implements CorporationCard {
             player.megaCredits += 2;
             return undefined;
         }    
+    }
+
+    public onCorpCardPlayed(player: Player, game: Game, card: CorporationCard): void {
+        this.onCardPlayed(player,game,card as ICard as IProjectCard);
     }
 
     public play() {

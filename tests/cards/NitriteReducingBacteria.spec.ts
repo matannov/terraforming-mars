@@ -1,34 +1,39 @@
-
 import { expect } from "chai";
 import { NitriteReducingBacteria } from "../../src/cards/NitriteReducingBacteria";
 import { Color } from "../../src/Color";
 import { Player } from "../../src/Player";
 import { OrOptions } from "../../src/inputs/OrOptions";
+import { Game } from "../../src/Game";
 
 describe("NitriteReducingBacteria", function () {
+    let card : NitriteReducingBacteria, player : Player, game : Game;
+
+    beforeEach(function() {
+        card = new NitriteReducingBacteria();
+        player = new Player("test", Color.BLUE, false);
+        game = new Game("foobar", [player, player], player);
+    });
+
     it("Should play", function () {
-        const card = new NitriteReducingBacteria();
-        const player = new Player("test", Color.BLUE, false);
         player.playedCards.push(card);
-        const action = card.play();
-        expect(action).to.eq(undefined);
+        card.play(player);
         expect(card.resourceCount).to.eq(3);
     });
+
     it("Should act", function () {
-        const card = new NitriteReducingBacteria();
-        const player = new Player("test", Color.BLUE, false);
         player.playedCards.push(card);
-        const action = card.action(player);
-        expect(action).to.eq(undefined);
+        card.action(player, game);
         expect(card.resourceCount).to.eq(1);
+
         player.addResourceTo(card, 3);
-        let orOptions = card.action(player) as OrOptions;
-        expect(orOptions).not.to.eq(undefined);
+        let orOptions = card.action(player, game) as OrOptions;
         expect(orOptions instanceof OrOptions).to.eq(true);
-        orOptions.options[0].cb();
+
+        orOptions!.options[1].cb();
         expect(card.resourceCount).to.eq(5);
-        orOptions.options[1].cb();
+        
+        orOptions!.options[0].cb();
         expect(card.resourceCount).to.eq(2);
-        expect(player.terraformRating).to.eq(21);
+        expect(player.getTerraformRating()).to.eq(21);
     });
 });

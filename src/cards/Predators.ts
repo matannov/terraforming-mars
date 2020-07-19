@@ -6,8 +6,10 @@ import { Player } from "../Player";
 import { Game } from "../Game";
 import { ResourceType } from "../ResourceType";
 import { SelectCard } from "../inputs/SelectCard";
-import { Pets } from "./Pets";
 import { CardName } from '../CardName';
+import { LogMessageType } from '../LogMessageType';
+import { LogMessageData } from '../LogMessageData';
+import { LogMessageDataType } from '../LogMessageDataType';
 
 export class Predators implements IProjectCard, IActionCard, IResourceCard {
     public cost: number = 14;
@@ -27,22 +29,20 @@ export class Predators implements IProjectCard, IActionCard, IResourceCard {
     }
 
     private getPossibleTargetCards(player: Player, game: Game): Array<ICard> {
-        let possibleCards = new Array<ICard>(); 
-        const petsCard = new Pets();
-        for (let card of game.getPlayedCardsWithAnimals()) {  
-            let owner = game.getCardPlayer(card.name);
-            if (player.id != owner.id && owner.hasProtectedHabitats()) continue;
-            if (owner.getResourcesOnCard(card) < 1) continue;
-            if (this.name === card.name) continue;
-            if (card.name === petsCard.name) continue;
-            possibleCards.push(card);
-        }
-        return possibleCards;
+        const result: Array<ICard> = [];
+        game.getPlayers().forEach((p) => {
+            if (p.hasProtectedHabitats() && player.id !== p.id) return;
+            result.push(...p.getCardsWithResources().filter(card => card.resourceType === ResourceType.ANIMAL 
+                                                                && card.name !== CardName.PETS
+                                                                && card.name !== this.name));
+        });
+        return result;
     }
 
     private doAction(targetCard:ICard, player: Player, game: Game): void {
-        game.getCardPlayer(targetCard.name).removeAnimals(player, targetCard, 1, game);
-        this.resourceCount++;
+        game.getCardPlayer(targetCard.name).removeResourceFrom(targetCard, 1, game, player, false);
+        this.logCardAction(game, player, targetCard);
+        player.addResourceTo(this);
     }
 
     public canAct(player: Player, game: Game): boolean {
@@ -53,7 +53,7 @@ export class Predators implements IProjectCard, IActionCard, IResourceCard {
     public action(player: Player, game: Game) {
         // Solo play, can always steal from immaginary opponent
         if (game.soloMode) {
-            this.resourceCount++;
+            player.addResourceTo(this);
             return undefined;
         }
         const animalCards = this.getPossibleTargetCards(player, game);
@@ -71,4 +71,15 @@ export class Predators implements IProjectCard, IActionCard, IResourceCard {
             }
         );
     }
+
+    private logCardAction(game: Game, player: Player, card?: ICard) {
+        const target = card ? new LogMessageData(LogMessageDataType.CARD, card.name) : new LogMessageData(LogMessageDataType.STRING, "Neutral Player");
+
+        game.log(
+          LogMessageType.DEFAULT,
+          "${0} removed an animal from ${1}",
+          new LogMessageData(LogMessageDataType.PLAYER, player.id),
+          target
+        );
+      }
 }

@@ -8,8 +8,10 @@ import { Game } from "../Game";
 import { AndOptions } from "../inputs/AndOptions";
 import { HowToPay } from "../inputs/HowToPay";
 import { SelectHowToPay } from "../inputs/SelectHowToPay";
-import { MAX_OCEAN_TILES } from '../constants';
+import { MAX_OCEAN_TILES, REDS_RULING_POLICY_COST } from '../constants';
 import { CardName } from '../CardName';
+import { PartyHooks } from "../turmoil/parties/PartyHooks";
+import { PartyName } from "../turmoil/parties/PartyName";
 
 export class WaterImportFromEuropa implements IActionCard, IProjectCard {
     public cost: number = 25;
@@ -24,13 +26,22 @@ export class WaterImportFromEuropa implements IActionCard, IProjectCard {
         return undefined;
     }
     public canAct(player: Player, game: Game): boolean {
-        return (player.canAfford(12,false, true) && game.board.getOceansOnBoard() < MAX_OCEAN_TILES);
+        const oceansMaxed = game.board.getOceansOnBoard() === MAX_OCEAN_TILES;
+        if (oceansMaxed) return false;
+  
+        let oceanCost = 12;
+  
+        if (PartyHooks.shouldApplyPolicy(game, PartyName.REDS)) {
+          return player.canAfford(oceanCost + REDS_RULING_POLICY_COST, game, false, true);
+        }
+  
+        return player.canAfford(oceanCost, game, false, true);;
     }
     public action(player: Player, game: Game) {
         let htp: HowToPay;
         return new AndOptions(
             () => {
-                if ((player.canUseHeatAsMegaCredits ? htp.heat : 0) + htp.megaCredits + (htp.titanium * player.titaniumValue) < 12) {
+                if ((player.canUseHeatAsMegaCredits ? htp.heat : 0) + htp.megaCredits + (htp.titanium * player.getTitaniumValue(game)) < 12) {
                     throw "Need to spend at least 12";
                 }
                 game.addOceanInterrupt(player);

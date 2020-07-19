@@ -1,4 +1,3 @@
- 
 import Vue from "vue";
 
 import { Board } from "./Board";
@@ -8,14 +7,13 @@ import { Award } from "./Award";
 import { OtherPlayer } from "./OtherPlayer";
 import { PlayerResources } from "./PlayerResources";
 import { WaitingFor } from "./WaitingFor";
-import { GlobalParameters } from "./GlobalParameters"
 import { Preferences } from "./Preferences"
 import { PlayerModel } from "../models/PlayerModel";
 import { Colony } from './Colony';
 import { LogPanel } from './LogPanel';
 import { PlayerMixin } from './PlayerMixin';
 import { TagCount } from './TagCount';
-
+import { Turmoil } from './Turmoil';
 
 const dialogPolyfill = require("dialog-polyfill");
 
@@ -27,22 +25,26 @@ export const PlayerHome = Vue.component("player-home", {
         "other-player": OtherPlayer,
         "player-resources": PlayerResources,
         "waiting-for": WaitingFor,
-        "global-parameters": GlobalParameters,
         "milestone": Milestone,
         "award": Award,
         "preferences": Preferences,
         "colony": Colony,
         "log-panel": LogPanel,
-        "tag-count": TagCount
+        "tag-count": TagCount,
+        "turmoil": Turmoil
     },
     data: function () {
         return {}
     },
     mixins: [PlayerMixin],
     methods: {
-        getPlayerCssForTurnOrder: (player: PlayerModel, hilightActive: boolean): string => {
+        getPlayerCssForTurnOrder: (player: PlayerModel, highlightActive: boolean): string => {
             var ret: string = "highlighter_box player_bg_color_" + player.color;
-            if (hilightActive && player.isActive) ret += " player_is_active";
+            if (highlightActive) {
+                if (player.needsToDraft || (player.needsToDraft === undefined && player.isActive)) {
+                    ret += " player_is_active";
+                }
+            }
             return ret;
         },
         showPlayerDetails: function (player: PlayerModel) {
@@ -83,15 +85,25 @@ export const PlayerHome = Vue.component("player-home", {
                 </div>
             </div>
 
-            <preferences v-trim-whitespace></preferences>
+            <preferences v-trim-whitespace>
+                <div class="deck-size">{{ player.deckSize }}</div>
+            </preferences>
 
             <div v-if="player.corporationCard">
 
                 <div class="player_home_block">
                     <a name="board" class="player_home_anchor"></a>
-                    <board :spaces="player.spaces" :venusNextExtension="player.venusNextExtension" :venusScaleLevel="player.venusScaleLevel" :boardName ="player.boardName"></board>
+                    <board 
+                        :spaces="player.spaces" 
+                        :venusNextExtension="player.venusNextExtension" 
+                        :venusScaleLevel="player.venusScaleLevel" 
+                        :boardName ="player.boardName"
+                        :oceans_count="player.oceans" 
+                        :oxygen_level="player.oxygenLevel" 
+                        :temperature="player.temperature"
+                        :shouldNotify="true"></board>
 
-                    <global-parameters :oceans_count="player.oceans" :oxygen_level="player.oxygenLevel" :temperature="player.temperature" v-trim-whitespace></global-parameters>
+                    <turmoil v-if="player.turmoil" :turmoil="player.turmoil"></turmoil>
 
                     <div v-if="player.players.length > 1" class="player_home_block--milestones-and-awards">
                         <milestone :milestones_list="player.milestones" />
@@ -143,7 +155,7 @@ export const PlayerHome = Vue.component("player-home", {
                 <div class="player_home_block player_home_block--hand" v-if="player.draftedCards.length > 0">
                     <h2 v-i18n>Drafted Cards</h2>
                     <div v-for="card in player.draftedCards" :key="card.name" class="cardbox">
-                        <card :card="card.name"></card>
+                        <card :card="card"></card>
                     </div>
                 </div>
 
@@ -156,7 +168,7 @@ export const PlayerHome = Vue.component("player-home", {
                 <div class="player_home_block player_home_block--hand" v-if="player.cardsInHand.length > 0">
                     <h2 :class="'player_color_'+ player.color" v-i18n>Cards In Hand</h2>
                     <div v-for="card in player.cardsInHand" :key="card.name" class="cardbox">
-                        <card :card="card.name" :resources="card.resources"></card>
+                        <card :card="card"></card>
                     </div>
                 </div>
 
@@ -164,18 +176,44 @@ export const PlayerHome = Vue.component("player-home", {
                     <h2 :class="'player_color_'+ player.color" v-i18n>Played Cards</h2>
 
                     <div v-if="player.corporationCard !== undefined" class="cardbox">
-                        <card :card="player.corporationCard" :resources="player.corporationCardResources"></card>
+                        <card :card="player.corporationCard" :player="player"></card>
                     </div>
                     <div v-for="card in getCardsByType(player.playedCards, [getActiveCardType()])" :key="card.name" class="cardbox">
-                        <card :card="card.name" :resources="card.resources" :player="player"></card>
+                        <card :card="card" :player="player"></card>
                     </div>
 
                     <stacked-cards :cards="getCardsByType(player.playedCards, [getAutomatedCardType(), getPreludeCardType()])" ></stacked-cards>
                     <stacked-cards :cards="getCardsByType(player.playedCards, [getEventCardType()])" ></stacked-cards>
                 </div>
+
+                <div v-if="player.selfReplicatingRobotsCards.length > 0" class="player_home_block">
+                    <h2 :class="'player_color_'+ player.color" v-i18n>Self-Replicating Robots cards</h2>
+                    <div>
+                        <div v-for="card in getCardsByType(player.selfReplicatingRobotsCards, [getActiveCardType()])" :key="card.name" class="cardbox">
+                            <card :card="card" :player="player"></card>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <div class="player_home_block player_home_block--setup nofloat"  v-if="!player.corporationCard">
+
+                <div v-for="card in player.dealtCorporationCards" :key="card.name" class="cardbox" v-if="player.initialDraft">
+                    <card :card="card"></card>
+                </div>
+
+                <div v-for="card in player.dealtPreludeCards" :key="card.name" class="cardbox" v-if="player.initialDraft">
+                    <card :card="card"></card>
+                </div> 
+
+                <div class="player_home_block player_home_block--hand" v-if="player.draftedCards.length > 0">              
+                    <h2 v-i18n>Drafted Cards</h2>
+                    <div v-for="card in player.draftedCards" :key="card.name" class="cardbox">
+                        <card :card="card"></card>
+                    </div>
+                </div>
+
                 <h2 :class="'player_color_'+ player.color" v-i18n>Select initial cards:</h2>
 
                 <waiting-for v-if="player.phase !== 'end'" :players="player.players" :player="player" :waitingfor="player.waitingFor"></waiting-for>
@@ -208,6 +246,7 @@ export const PlayerHome = Vue.component("player-home", {
                     </summary>
                     <div class="accordion-body">
                         <board :spaces="player.spaces" :venusNextExtension="player.venusNextExtension" :venusScaleLevel="player.venusScaleLevel" :boardName ="player.boardName"></board>
+                        <turmoil v-if="player.turmoil" :turmoil="player.turmoil"></turmoil>
                     </div>
                 </details>
             </div>
